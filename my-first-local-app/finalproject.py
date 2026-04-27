@@ -1,20 +1,23 @@
 import pygame
-import random
 import sys
 
 pygame.init()
 
+
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Bible Monument Builder")
+pygame.display.set_caption("Bible Monument Builder - Pixel Art")
 clock = pygame.time.Clock()
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
+BROWN = (139, 69, 19)
+BLUE = (0, 120, 255)
 GRAY = (120, 120, 120)
+YELLOW = (255, 255, 0)
 
 FONT = pygame.font.SysFont("consolas", 20)
+
 
 events = {
     "Garden of Eden": [
@@ -55,12 +58,47 @@ events = {
     ]
 }
 
+# ==========================
+# Pixel Art Pieces (Each event has 4 pieces)
+# ==========================
+def draw_piece(surface, event, x, y, part):
+    size = 40
+
+    try:
+        if event == "Noah's Ark":
+            pygame.draw.rect(surface, BROWN, (x, y, size, size//2))
+
+        elif event == "Parting of the Red Sea":
+            pygame.draw.rect(surface, BLUE, (x, y, size, size))
+
+        elif event == "David and Goliath":
+            pygame.draw.rect(surface, GRAY, (x, y, size, size))
+
+        elif event == "Jonah and the Whale":
+            pygame.draw.ellipse(surface, BLUE, (x, y, size, size//2))
+
+        elif event == "Garden of Eden":
+            pygame.draw.circle(surface, (0,200,0), (x+20, y+20), 15)
+
+        elif event == "Jesus Death and Resurrection":
+            pygame.draw.rect(surface, YELLOW, (x+15, y, 10, 40))
+            pygame.draw.rect(surface, YELLOW, (x, y+15, 40, 10))
+
+        else:
+            raise Exception("Unknown event")
+
+    except:
+        # Backup placeholder
+        pygame.draw.rect(surface, GRAY, (x, y, size, size), 2)
+
+
 class FallingPiece:
-    def __init__(self, target_x, target_y):
+    def __init__(self, target_x, target_y, event, part):
         self.x = target_x
         self.y = 0
         self.target_y = target_y
-        self.size = 40
+        self.event = event
+        self.part = part
         self.landed = False
 
     def update(self):
@@ -71,17 +109,18 @@ class FallingPiece:
                 self.landed = True
 
     def draw(self):
-        pygame.draw.rect(screen, GREEN, (self.x, self.y, self.size, self.size))
+        draw_piece(screen, self.event, self.x, self.y, self.part)
 
 class Monument:
-    def __init__(self):
+    def __init__(self, event):
+        self.event = event
         self.positions = [(300,400),(340,400),(300,440),(340,440)]
         self.pieces = []
 
     def add_piece(self):
         if len(self.pieces) < 4:
             pos = self.positions[len(self.pieces)]
-            self.pieces.append(FallingPiece(pos[0], pos[1]))
+            self.pieces.append(FallingPiece(pos[0], pos[1], self.event, len(self.pieces)))
 
     def update(self):
         for p in self.pieces:
@@ -93,13 +132,13 @@ class Monument:
         for p in self.pieces:
             p.draw()
 
+
 def ask_question(screen, question, answers, correct):
     waiting = True
     while waiting:
         screen.fill(BLACK)
         y = 100
-        text = FONT.render(question, True, WHITE)
-        screen.blit(text, (50, y))
+        screen.blit(FONT.render(question, True, WHITE), (50, y))
 
         for ans in answers:
             y += 40
@@ -117,7 +156,7 @@ def ask_question(screen, question, answers, correct):
                     return key == correct
 
 for event_name, questions in events.items():
-    monument = Monument()
+    monument = Monument(event_name)
 
     for q, correct, options in questions:
         correct_answer = ask_question(screen, q, options, correct)
