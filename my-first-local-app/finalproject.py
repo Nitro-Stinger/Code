@@ -3,27 +3,25 @@ import random
 import sys
 
 pygame.init()
-width, height = 800, 600
-screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Bible Pixel Quiz")
+
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Bible Monument Builder")
 clock = pygame.time.Clock()
 
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+GRAY = (120, 120, 120)
 
-Black = (0, 0, 0)
-White = (255, 255, 255)
-Green = (0, 255, 0)
-Blue = (0, 100, 255)
-Red = (255, 50, 50)
-
-Font = pygame.font.SysFont("consolas", 24)
-
+FONT = pygame.font.SysFont("consolas", 20)
 
 events = {
     "Garden of Eden": [
         ("Who created the world?", "A", ["A) God", "B) Adam", "C) Moses", "D) Noah"]),
         ("First man created?", "B", ["A) Cain", "B) Adam", "C) Noah", "D) Abel"]),
         ("First woman created?", "C", ["A) Mary", "B) Ruth", "C) Eve", "D) Sarah"]),
-        ("Forbidden fruit from which tree?", "D", ["A) Apple Tree", "B) Fig Tree", "C) Oak Tree", "D) Knowledge of Good and Evil"])
+        ("Forbidden fruit from which tree?", "D", ["A) Apple Tree", "B) Fig Tree", "C) Oak Tree", "D) Knowledge"])
     ],
     "Parting of the Red Sea": [
         ("Who led Israelites?", "A", ["A) Moses", "B) Joshua", "C) Aaron", "D) David"]),
@@ -57,68 +55,89 @@ events = {
     ]
 }
 
+class FallingPiece:
+    def __init__(self, target_x, target_y):
+        self.x = target_x
+        self.y = 0
+        self.target_y = target_y
+        self.size = 40
+        self.landed = False
 
-# class FallingPiece:
-#     def __init__(self):
-#         self.x = random.randint(100, 700)
-#         self.y = 0
-#         self.size = 20
+    def update(self):
+        if not self.landed:
+            self.y += 6
+            if self.y >= self.target_y:
+                self.y = self.target_y
+                self.landed = True
 
-#     def update(self):
-#         self.y += 5
+    def draw(self):
+        pygame.draw.rect(screen, GREEN, (self.x, self.y, self.size, self.size))
 
-#     def draw(self):
-#         pygame.draw.rect(screen, Green, (self.x, self.y, self.size, self.size))
+class Monument:
+    def __init__(self):
+        self.positions = [(300,400),(340,400),(300,440),(340,440)]
+        self.pieces = []
 
-# class PixelGuy:
-#     def __init__(self):
-#         self.x = 380
-#         self.y = 500
-#         self.frame = 0
+    def add_piece(self):
+        if len(self.pieces) < 4:
+            pos = self.positions[len(self.pieces)]
+            self.pieces.append(FallingPiece(pos[0], pos[1]))
 
-#     def dance(self):
-#         self.frame = (self.frame + 1) % 2
+    def update(self):
+        for p in self.pieces:
+            p.update()
 
-#     def draw(self):
-#         color = Blue if self.frame == 0 else Red
-#         pygame.draw.rect(screen, color, (self.x, self.y, 30, 30))
+    def draw(self):
+        if not self.pieces:
+            pygame.draw.rect(screen, GRAY, (300, 400, 80, 80), 2)
+        for p in self.pieces:
+            p.draw()
 
+def ask_question(screen, question, answers, correct):
+    waiting = True
+    while waiting:
+        screen.fill(BLACK)
+        y = 100
+        text = FONT.render(question, True, WHITE)
+        screen.blit(text, (50, y))
 
-def ask_question(question, correct, answers):
-    print("\n" + question)
-    for ans in answers:
-        print(ans)
-    choice = input("Your answer (A/B/C/D): ").upper()
-    return choice == correct
+        for ans in answers:
+            y += 40
+            screen.blit(FONT.render(ans, True, WHITE), (50, y))
 
+        pygame.display.flip()
 
-# pieces = []
-# pixel_guy = PixelGuy()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                key = pygame.key.name(event.key).upper()
+                if key in ["A","B","C","D"]:
+                    return key == correct
 
 for event_name, questions in events.items():
-    print(f"\n=== {event_name} ===")
+    monument = Monument()
+
     for q, correct, options in questions:
-        if ask_question(q, correct, options):
-            print("Correct!")
-            # pieces.append(FallingPiece())
-            # pixel_guy.dance()
-        else:
-            print("Wrong!")
+        correct_answer = ask_question(screen, q, options, correct)
 
-#         running = True
-#         ticks = 0
-#         while running:
-#             screen.fill(Black)
-#             for piece in pieces:
-#                 piece.update()
-#                 piece.draw()
-#             pixel_guy.draw()
-#             pygame.display.flip()
-#             # clock.tick(30)
-#             ticks += 1
-#             if ticks > 30:
-#                 running = False
+        if correct_answer:
+            monument.add_piece()
 
-print("\nGame Complete! Thanks for playing.")
+        animating = True
+        while animating:
+            screen.fill(BLACK)
+
+            monument.update()
+            monument.draw()
+
+            pygame.display.flip()
+            clock.tick(60)
+
+            if all(p.landed for p in monument.pieces):
+                animating = False
+
+print("Game Finished")
 pygame.quit()
 sys.exit()
