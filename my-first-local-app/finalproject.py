@@ -4,17 +4,11 @@ import os
 
 pygame.init()
 
-# ==========================
-# Window Setup
-# ==========================
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Bible Monument Builder")
 clock = pygame.time.Clock()
 
-# ==========================
-# Colors
-# ==========================
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -23,9 +17,6 @@ GRAY = (120, 120, 120)
 FONT = pygame.font.SysFont("consolas", 20)
 BIG_FONT = pygame.font.SysFont("consolas", 50)
 
-# ==========================
-# FIXED FILE PATH HANDLING
-# ==========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 image_files = {
@@ -37,9 +28,6 @@ image_files = {
     "Jesus Death and Resurrection": os.path.join(BASE_DIR, "cross.png")
 }
 
-# ==========================
-# Question Data (UNCHANGED)
-# ==========================
 events = {
     "Garden of Eden": [
         ("Who created the world?", "A", ["A) God", "B) Adam", "C) Moses", "D) Noah"]),
@@ -79,9 +67,6 @@ events = {
     ]
 }
 
-# ==========================
-# LOAD + SPLIT IMAGE (WITH DEBUG)
-# ==========================
 def load_and_split(image_path):
     try:
         print(f"Loading image: {image_path}")
@@ -104,9 +89,6 @@ def load_and_split(image_path):
         print(f"ERROR loading image: {e}")
         return None
 
-# ==========================
-# Classes
-# ==========================
 class FallingPiece:
     def __init__(self, image, target_x, target_y):
         self.image = image
@@ -151,9 +133,6 @@ class Monument:
         for p in self.pieces:
             p.draw()
 
-# ==========================
-# Wrong Screen
-# ==========================
 def show_wrong():
     timer = 0
     while timer < 60:
@@ -164,9 +143,6 @@ def show_wrong():
         clock.tick(60)
         timer += 1
 
-# ==========================
-# Question Handling
-# ==========================
 def ask_question(question, answers, correct):
     while True:
         screen.fill(BLACK)
@@ -193,9 +169,6 @@ def ask_question(question, answers, correct):
                     else:
                         show_wrong()
 
-# ==========================
-# Main Game Loop
-# ==========================
 for event_name, questions in events.items():
     monument = Monument(event_name)
 
