@@ -50,4 +50,4 @@ Press A, B, C, or D to answer questions
 Close the window to exit the game
 
 Assets
-Each image is automatically:
+Each image is automatically loaded
