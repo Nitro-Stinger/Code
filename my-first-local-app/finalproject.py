@@ -3,21 +3,18 @@ import sys
 
 pygame.init()
 
-
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Bible Monument Builder - Pixel Art")
+pygame.display.set_caption("Bible Monument Builder - Image Version")
 clock = pygame.time.Clock()
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-BROWN = (139, 69, 19)
-BLUE = (0, 120, 255)
+RED = (255, 0, 0)
 GRAY = (120, 120, 120)
-YELLOW = (255, 255, 0)
 
 FONT = pygame.font.SysFont("consolas", 20)
-
+BIG_FONT = pygame.font.SysFont("consolas", 40)
 
 events = {
     "Garden of Eden": [
@@ -58,47 +55,36 @@ events = {
     ]
 }
 
-# ==========================
-# Pixel Art Pieces (Each event has 4 pieces)
-# ==========================
-def draw_piece(surface, event, x, y, part):
-    size = 40
-
+def load_and_split(image_path):
     try:
-        if event == "Noah's Ark":
-            pygame.draw.rect(surface, BROWN, (x, y, size, size//2))
+        img = pygame.image.load(image_path).convert_alpha()
+        w, h = img.get_width(), img.get_height()
 
-        elif event == "Parting of the Red Sea":
-            pygame.draw.rect(surface, BLUE, (x, y, size, size))
-
-        elif event == "David and Goliath":
-            pygame.draw.rect(surface, GRAY, (x, y, size, size))
-
-        elif event == "Jonah and the Whale":
-            pygame.draw.ellipse(surface, BLUE, (x, y, size, size//2))
-
-        elif event == "Garden of Eden":
-            pygame.draw.circle(surface, (0,200,0), (x+20, y+20), 15)
-
-        elif event == "Jesus Death and Resurrection":
-            pygame.draw.rect(surface, YELLOW, (x+15, y, 10, 40))
-            pygame.draw.rect(surface, YELLOW, (x, y+15, 40, 10))
-
-        else:
-            raise Exception("Unknown event")
-
+        pieces = [
+            img.subsurface((0, 0, w//2, h//2)),
+            img.subsurface((w//2, 0, w//2, h//2)),
+            img.subsurface((0, h//2, w//2, h//2)),
+            img.subsurface((w//2, h//2, w//2, h//2))
+        ]
+        return pieces
     except:
-        # Backup placeholder
-        pygame.draw.rect(surface, GRAY, (x, y, size, size), 2)
+        return None
 
+image_files = {
+    "Garden of Eden": "eden.png",
+    "Parting of the Red Sea": "redsea.png",
+    "David and Goliath": "david.png",
+    "Jonah and the Whale": "whale.png",
+    "Noah's Ark": "ark.png",
+    "Jesus Death and Resurrection": "cross.png"
+}
 
 class FallingPiece:
-    def __init__(self, target_x, target_y, event, part):
+    def __init__(self, image, target_x, target_y):
+        self.image = image
         self.x = target_x
         self.y = 0
         self.target_y = target_y
-        self.event = event
-        self.part = part
         self.landed = False
 
     def update(self):
@@ -109,18 +95,23 @@ class FallingPiece:
                 self.landed = True
 
     def draw(self):
-        draw_piece(screen, self.event, self.x, self.y, self.part)
+        if self.image:
+            screen.blit(self.image, (self.x, self.y))
+        else:
+            pygame.draw.rect(screen, GRAY, (self.x, self.y, 40, 40), 2)
 
 class Monument:
     def __init__(self, event):
-        self.event = event
-        self.positions = [(300,400),(340,400),(300,440),(340,440)]
+        self.positions = [(250,200),(450,200),(250,350),(450,350)]
         self.pieces = []
+        self.images = load_and_split(image_files.get(event, ""))
 
     def add_piece(self):
-        if len(self.pieces) < 4:
-            pos = self.positions[len(self.pieces)]
-            self.pieces.append(FallingPiece(pos[0], pos[1], self.event, len(self.pieces)))
+        index = len(self.pieces)
+        if index < 4:
+            img = self.images[index] if self.images else None
+            pos = self.positions[index]
+            self.pieces.append(FallingPiece(img, pos[0], pos[1]))
 
     def update(self):
         for p in self.pieces:
@@ -128,14 +119,13 @@ class Monument:
 
     def draw(self):
         if not self.pieces:
-            pygame.draw.rect(screen, GRAY, (300, 400, 80, 80), 2)
+            pygame.draw.rect(screen, GRAY, (250,200,300,300), 2)
         for p in self.pieces:
             p.draw()
 
 
 def ask_question(screen, question, answers, correct):
-    waiting = True
-    while waiting:
+    while True:
         screen.fill(BLACK)
         y = 100
         screen.blit(FONT.render(question, True, WHITE), (50, y))
@@ -153,16 +143,29 @@ def ask_question(screen, question, answers, correct):
             if event.type == pygame.KEYDOWN:
                 key = pygame.key.name(event.key).upper()
                 if key in ["A","B","C","D"]:
-                    return key == correct
+                    if key == correct:
+                        return True
+                    else:
+                        show_wrong(screen)
+
+
+def show_wrong(screen):
+    timer = 0
+    while timer < 60:
+        screen.fill(BLACK)
+        text = BIG_FONT.render("WRONG", True, RED)
+        screen.blit(text, (WIDTH//2 - 100, HEIGHT//2 - 50))
+        pygame.display.flip()
+        clock.tick(60)
+        timer += 1
+
 
 for event_name, questions in events.items():
     monument = Monument(event_name)
 
     for q, correct, options in questions:
-        correct_answer = ask_question(screen, q, options, correct)
-
-        if correct_answer:
-            monument.add_piece()
+        ask_question(screen, q, options, correct)
+        monument.add_piece()
 
         animating = True
         while animating:
